@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Student Recommender</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .fade-in { animation: fadeIn 0.8s ease-out forwards; opacity: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-in { opacity: 0; animation: slideIn 0.5s ease-out forwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Card -->
+    <div class="glass-card rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden fade-in" style="animation-delay: 0.2s;">
+        
+        <!-- Header -->
+        <div class="bg-indigo-600 p-8 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+            <div class="relative z-10">
+                <div class="inline-block p-3 rounded-full bg-white/20 mb-3 backdrop-blur-md">
+                    <i class="fas fa-brain text-white text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-white tracking-wide">AI Learning Assistant</h1>
+                <p class="text-indigo-100 text-sm mt-1">Sistem Rekomendasi Personal Mahasiswa</p>
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="p-8">
+            <label class="block text-gray-700 text-sm font-bold mb-2 ml-1" for="userIdInput">
+                Masukkan User ID / NIM
+            </label>
+            <div class="flex gap-3 shadow-sm rounded-lg">
+                <input type="number" id="userIdInput" placeholder="Contoh: 104406" 
+                    class="w-full px-5 py-3 rounded-l-lg border-y border-l border-gray-300 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition duration-200"
+                    onkeypress="handleEnter(event)">
+                <button onclick="getRecommendations()" 
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-r-lg shadow-md transform active:scale-95 transition duration-200 flex items-center">
+                    <i class="fas fa-search mr-2"></i> Analisis
+                </button>
+            </div>
+            
+            <!-- TOMBOL DEMO 3 CLUSTER -->
+            <div class="mt-5">
+                <p class="text-xs text-gray-500 font-semibold mb-2 ml-1">⚡ Demo Cepat (Pilih Skenario):</p>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="fillID('104406')" class="flex-1 bg-emerald-50 text-emerald-700 px-3 py-2 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition cursor-pointer flex items-center justify-center gap-2 text-xs font-semibold">
+                        <i class="fas fa-check-circle"></i> Cukup
+                    </button>
+                    <button onclick="fillID('104495')" class="flex-1 bg-orange-50 text-orange-700 px-3 py-2 rounded-lg border border-orange-100 hover:bg-orange-100 transition cursor-pointer flex items-center justify-center gap-2 text-xs font-semibold">
+                        <i class="fas fa-exclamation-circle"></i> Kurang
+                    </button>
+                    <!-- Tombol Baru: Cluster 1 -->
+                    <button onclick="fillID('101010')" class="flex-1 bg-purple-50 text-purple-700 px-3 py-2 rounded-lg border border-purple-100 hover:bg-purple-100 transition cursor-pointer flex items-center justify-center gap-2 text-xs font-semibold">
+                        <i class="fas fa-bug"></i> Anomali
+                    </button>
+                </div>
+            </div>
+
+            <div id="loading" class="hidden mt-8 text-center transition-all duration-300">
+                <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-100 border-t-indigo-600"></div>
+                <p id="loading-text" class="text-indigo-800 text-sm mt-4 font-semibold animate-pulse">Memulai analisis...</p>
+            </div>
+
+            <div id="error-msg" class="hidden mt-6 p-4 bg-red-50 text-red-700 rounded-xl border border-red-100 text-sm flex items-center gap-3">
+                <i class="fas fa-times-circle text-lg"></i>
+                <span id="error-text">Error message</span>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div id="results" class="hidden border-t border-gray-100 bg-gray-50/50 p-8">
+            <div class="mb-8 slide-in" style="animation-delay: 0.1s;">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 ml-1">Hasil Profiling</h3>
+                <div id="profile-card" class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-start gap-4 transition-all duration-300 hover:shadow-md"></div>
+            </div>
+
+            <div class="slide-in" style="animation-delay: 0.3s;">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 ml-1">Rekomendasi Materi</h3>
+                <div id="rec-list" class="space-y-3"></div>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        function handleEnter(e) { if(e.key === 'Enter') getRecommendations(); }
+        function fillID(id) { 
+            document.getElementById('userIdInput').value = id; 
+            document.getElementById('userIdInput').focus();
+        }
+
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function getRecommendations() {
+            const userId = document.getElementById('userIdInput').value;
+            const loading = document.getElementById('loading');
+            const loadingText = document.getElementById('loading-text');
+            const resultsDiv = document.getElementById('results');
+            const errorMsg = document.getElementById('error-msg');
+
+            if (!userId) { showError("Mohon masukkan User ID terlebih dahulu."); return; }
+
+            loading.classList.remove('hidden');
+            resultsDiv.classList.add('hidden');
+            errorMsg.classList.add('hidden');
+            
+            try {
+                loadingText.innerText = "Menghubungkan ke Database LMS...";
+                await delay(700);
+                loadingText.innerText = "Menganalisis Profil Belajar...";
+                await delay(800);
+                loadingText.innerText = "Menyiapkan Rekomendasi Personal...";
+                await delay(800);
+
+                const response = await fetch('/api/recommend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+
+                const data = await response.json();
+                loading.classList.add('hidden');
+                if (data.error) { showError(data.error); return; }
+
+                renderProfile(data.cluster_id, data.cluster_status);
+                renderRecommendations(data.recommendations);
+                resultsDiv.classList.remove('hidden');
+            } catch (error) {
+                loading.classList.add('hidden');
+                showError("Gagal terhubung ke Server. Pastikan api_server.py berjalan.");
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            const txt = document.getElementById('error-text');
+            txt.innerText = msg;
+            el.classList.remove('hidden');
+        }
+
+        function renderProfile(clusterId, statusText) {
+            const card = document.getElementById('profile-card');
+            let iconHTML = '', contentHTML = '';
+
+            if (clusterId === 2) { // Cukup (Hijau)
+                card.className = "bg-emerald-50 p-5 rounded-xl border border-emerald-100 shadow-sm flex items-start gap-4";
+                iconHTML = `<div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl shadow-sm"><i class="fas fa-check"></i></div>`;
+                contentHTML = `<div><div class="font-bold text-emerald-800 text-lg">Cukup</div><p class="text-emerald-700 text-sm mt-1 leading-snug">Aktivitas belajar stabil dan baik. Disarankan materi pengayaan.</p></div>`;
+            } else if (clusterId === 0) { // Kurang (Oranye)
+                card.className = "bg-orange-50 p-5 rounded-xl border border-orange-100 shadow-sm flex items-start gap-4";
+                iconHTML = `<div class="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xl shadow-sm"><i class="fas fa-exclamation"></i></div>`;
+                contentHTML = `<div><div class="font-bold text-orange-800 text-lg">Kurang</div><p class="text-orange-700 text-sm mt-1 leading-snug">Aktivitas belajar perlu ditingkatkan. Fokus pada materi dasar.</p></div>`;
+            } else if (clusterId === 1) { // Anomali (Ungu) - BARU!
+                card.className = "bg-purple-50 p-5 rounded-xl border border-purple-100 shadow-sm flex items-start gap-4";
+                iconHTML = `<div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl shadow-sm"><i class="fas fa-bug"></i></div>`;
+                contentHTML = `<div><div class="font-bold text-purple-800 text-lg">Evaluasi Khusus</div><p class="text-purple-700 text-sm mt-1 leading-snug">Terdeteksi pola data anomali (Outlier). Disarankan verifikasi manual.</p></div>`;
+            } else { // Default
+                card.className = "bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex items-start gap-4";
+                iconHTML = `<div class="w-12 h-12 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xl"><i class="fas fa-user"></i></div>`;
+                contentHTML = `<div><div class="font-bold text-gray-800 text-lg">${statusText}</div><p class="text-gray-500 text-sm mt-1">Profil standar.</p></div>`;
+            }
+            card.innerHTML = iconHTML + contentHTML;
+        }
+
+        function renderRecommendations(items) {
+            const list = document.getElementById('rec-list');
+            list.innerHTML = '';
+            items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = "group flex items-center p-4 bg-white rounded-xl border border-gray-100 hover:border-indigo-300 hover:shadow-md transition-all duration-300 cursor-pointer transform hover:-translate-y-1 slide-in";
+                div.style.animationDelay = `${index * 150}ms`; div.style.opacity = '0';
+                div.innerHTML = `
+                    <div class="flex-shrink-0 h-10 w-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">${index + 1}</div>
+                    <div class="ml-4 flex-1">
+                        <div class="flex justify-between items-center">
+                            <p class="text-sm font-semibold text-gray-700 group-hover:text-indigo-700 transition-colors">${item}</p>
+                            <span class="text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded-full group-hover:bg-indigo-50 group-hover:text-indigo-600 transition">Recommended</span>
+                        </div>
+                    </div>
+                    <div class="ml-2 text-gray-300 group-hover:text-indigo-500 transition-transform duration-300 group-hover:translate-x-1"><i class="fas fa-chevron-right"></i></div>
+                `;
+                list.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
